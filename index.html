@@ -1142,28 +1142,30 @@
 
         // Google Sheets Configuration
         let googleSheetsConfig = {
-            // ใช้ URL ที่คุณให้มาเป็นค่าเริ่มต้น
-            webAppUrl: 'https://script.google.com/macros/s/AKfycbwMBhYZCXuWCovPjkIxjiV8jeN-jgLHZlt7DQ5QGvJg8O4j5yf2wTnRrd89aPSdC9A/exec',
-            sheetsId: ''
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbwMfgn5khXMlE34Dg6XFqZI8Bv8U2SyCHlpIJ2tP4eN8S7KJszdS_Z9dBFJJSCdbzHB/exec',
+        sheetsId:  '1ST0Pe4mojfQiWQRR589BTXj0mWqfRorMAsJFKWs89Pc'
         };
 
         // Load Google Sheets configuration
         function loadGoogleSheetsConfig() {
-            const savedConfig = localStorage.getItem('mitcheck_google_config');
-            if (savedConfig) {
-                try {
-                    const config = JSON.parse(savedConfig);
-                    googleSheetsConfig.webAppUrl = config.webAppUrl || googleSheetsConfig.webAppUrl;
-                    googleSheetsConfig.sheetsId = config.sheetsId || '';
-                    document.getElementById('webAppUrl').value = googleSheetsConfig.webAppUrl;
-                    document.getElementById('sheetsId').value = googleSheetsConfig.sheetsId;
-                } catch (error) {
-                    console.error('Error loading Google Sheets config:', error);
-                }
-            } else {
-                // Set default URL
-                document.getElementById('webAppUrl').value = googleSheetsConfig.webAppUrl;
+        const saved = localStorage.getItem('mitcheck_google_config');
+        if (saved) {
+            try {
+            const cfg = JSON.parse(saved);
+            googleSheetsConfig = {
+                webAppUrl: cfg.webAppUrl || googleSheetsConfig.webAppUrl,
+                sheetsId:  cfg.sheetsId  || googleSheetsConfig.sheetsId
+            };
+            } catch (e) {
+            // ถ้า parse ไม่ได้ก็ข้ามไป ใช้ค่าดีฟอลต์ในโค้ด
+            console.warn('Cannot parse saved config, using defaults.');
             }
+        }
+        // อัปเดตฟอร์มให้เห็นค่าปัจจุบัน (แม้ไม่เคยกดบันทึกก็พร้อมใช้)
+        const urlEl = document.getElementById('webAppUrl');
+        const idEl  = document.getElementById('sheetsId');
+        if (urlEl) urlEl.value = googleSheetsConfig.webAppUrl;
+        if (idEl)  idEl.value  = googleSheetsConfig.sheetsId;
         }
 
         // Save Google Sheets configuration
