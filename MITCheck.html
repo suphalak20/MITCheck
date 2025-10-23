@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MITCheck - ระบบเช็คชื่อนักศึกษาด้วย GPS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+        .status-present { background-color: #16a34a !important; color: white !important; }
+        .status-absent { background-color: #dc2626 !important; color: white !important; }
+        .status-gps { background-color: #6213a9 !important; color: white !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+        .mit-purple { background-color: #6213a9; }
+        .mit-gold { background-color: #fac903; }
+        .mit-green { background-color: #16a34a; }
+        .mit-red { background-color: #dc2626; }
+        .text-mit-purple { color: #6213a9; }
+        .text-mit-gold { color: #fac903; }
+        .border-mit-purple { border-color: #6213a9; }
+        .auto-result {
+            background: linear-gradient(135deg, #6213a9, #8b5cf6);
+            color: white; padding: 20px; border-radius: 12px; margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(98, 19, 169, 0.3);
+        }
+        .data-persistence {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: white; padding: 15px; border-radius: 8px; margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-full">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6 border-t-4 border-mit-purple">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-mit-purple mb-2">🎓 MITCheck</h1>
+                <p class="text-lg text-gray-700 font-medium">ระบบเช็คชื่อนักศึกษาด้วย GPS</p>
+                <p class="text-sm text-gray-600">มหาวิทยาลัยนครพนม - คณะวิทยาการจัดการและเทคโนโลยีสารสนเทศ</p>
+            </div>
+
+            <!-- Data Persistence Status -->
+            <div class="data-persistence text-center mt-4">
+                <p class="text-sm">💾 ระบบเก็บข้อมูลอัตโนมัติ - ข้อมูลจะถูกบันทึกถาวรและโหลดขึ้นมาทุกครั้งที่เปิดระบบ</p>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex flex-wrap justify-center gap-2 mt-4">
+                <button onclick="showPage('manage')" class="nav-btn mit-green text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all font-medium">👥 จัดการนักศึกษา</button>
+                <button onclick="showPage('departments')" class="nav-btn mit-purple text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all font-medium">🏫 เลือกสาขา</button>
+                <button onclick="showPage('daily')" class="nav-btn bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">📊 รายงานรายวัน</button>
+                <button onclick="showPage('summary')" class="nav-btn mit-purple text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all font-medium">📈 สรุปปลายเทอม</button>
+                <!-- NEW: ปุ่มกิจกรรม กยส. -->
+                <button onclick="showPage('activity')" class="nav-btn bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors font-medium">🎟️ กิจกรรม กยส.</button>
+                <button onclick="showPage('settings')" class="nav-btn bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium">⚙️ ตั้งค่า Google Sheets</button>
+            </div>
+        </div>
+
+        <!-- GPS Status -->
+        <div id="gpsStatus" class="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4 rounded hidden">
+            <p class="text-yellow-700">🌍 กำลังขอสิทธิ์เข้าถึงตำแหน่ง GPS...</p>
+        </div>
+
+        <!-- Departments Page -->
+        <div id="departmentsPage" class="page">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- สาขาบัญชี -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">📊 สาขาวิชาบัญชี</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('accounting', 1)" class="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('accounting', 2)" class="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('accounting', 3)" class="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('accounting', 4)" class="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+
+                <!-- สาขาการจัดการ -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">💼 สาขาวิชาการจัดการ</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('management', 1)" class="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('management', 2)" class="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('management', 3)" class="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('management', 4)" class="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+
+                <!-- สาขานิเทศศาสตร์ดิจิทัล -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">📱 สาขาวิชานิเทศศาสตร์ดิจิทัล</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('digital', 1)" class="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('digital', 2)" class="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('digital', 3)" class="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('digital', 4)" class="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+
+                <!-- สาขาเทคโนโลยีสารสนเทศ -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">💻 สาขาวิชาเทคโนโลยีสารสนเทศและนวัตกรรมคอมพิวเตอร์</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('it', 1)" class="w-full text-left p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('it', 2)" class="w-full text-left p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('it', 3)" class="w-full text-left p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('it', 4)" class="w-full text-left p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+
+                <!-- สาขาวิทยาศาสตร์การกีฬา -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">⚽ สาขาวิชาวิทยาศาสตร์การกีฬา</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('sports', 1)" class="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('sports', 2)" class="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('sports', 3)" class="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('sports', 4)" class="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+
+                <!-- สาขานวัตกรรมการตลาด -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🎯 สาขาวิชานวัตกรรมการตลาด</h3>
+                    <div class="space-y-2">
+                        <button onclick="showCheckIn('marketing', 1)" class="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">ชั้นปีที่ 1</button>
+                        <button onclick="showCheckIn('marketing', 2)" class="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">ชั้นปีที่ 2</button>
+                        <button onclick="showCheckIn('marketing', 3)" class="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">ชั้นปีที่ 3</button>
+                        <button onclick="showCheckIn('marketing', 4)" class="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors">ชั้นปีที่ 4</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Page (NEW) -->
+        <div id="activityPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">🎟️ กิจกรรม กยส. — ลงทะเบียนเข้าร่วม</h2>
+
+                <!-- Admin Add Activity -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">👩‍💼 ผู้ดูแล: เพิ่มกิจกรรมใหม่</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="actName" type="text" placeholder="ชื่อกิจกรรม" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <input id="actCapacity" type="number" min="1" placeholder="จำนวนรับ (คน)" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <button onclick="addActivity()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">➕ เพิ่มกิจกรรม</button>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">* ผู้ดูแลสามารถเพิ่มกิจกรรมพร้อมกำหนดจำนวนคนที่ลงทะเบียนได้</p>
+                </div>
+
+                <!-- Activity List -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-3">📋 กิจกรรมที่เปิดรับ</h3>
+                    <div id="activityList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+
+                <!-- Registration Box -->
+                <div id="registrationBox" class="mt-8 hidden">
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">📝 ลงทะเบียนเข้าร่วมกิจกรรม: <span id="regActTitle" class="font-bold"></span></h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input id="regFullname" type="text" placeholder="ชื่อ-สกุล" class="border border-gray-300 rounded-lg px-3 py-2">
+                            <input id="regStudentId" type="text" placeholder="รหัสนักศึกษา" class="border border-gray-300 rounded-lg px-3 py-2">
+                            <select id="regYear" class="border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="">เลือกชั้นปี</option>
+                                <option value="1">ปี 1</option>
+                                <option value="2">ปี 2</option>
+                                <option value="3">ปี 3</option>
+                                <option value="4">ปี 4</option>
+                            </select>
+                            <select id="regDept" class="border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="">เลือกสาขา</option>
+                                <option value="accounting">บัญชี</option>
+                                <option value="management">การจัดการ</option>
+                                <option value="digital">นิเทศศาสตร์ดิจิทัล</option>
+                                <option value="it">เทคโนโลยีสารสนเทศ</option>
+                                <option value="sports">วิทยาศาสตร์การกีฬา</option>
+                                <option value="marketing">นวัตกรรมการตลาด</option>
+                            </select>
+                            <input id="regPhoto" type="file" accept="image/*" class="border border-gray-300 rounded-lg px-3 py-2 md:col-span-2">
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button onclick="captureGPSForRegistration()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">📍 ดึง GPS</button>
+                            <span id="regGPS" class="text-sm text-gray-700 self-center">ยังไม่ได้ดึงพิกัด</span>
+                        </div>
+
+                        <div class="mt-6">
+                            <button onclick="saveRegistration()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">💾 บันทึก</button>
+                            <button onclick="cancelRegistration()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 ml-2">ยกเลิก</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check-in Page -->
+        <div id="checkinPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800" id="checkinTitle">เช็คชื่อประจำวัน</h2>
+                        <p class="text-gray-600" id="checkinSubtitle">เลือกสถานะของนักศึกษา</p>
+                    </div>
+                    <button onclick="showPage('departments')" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">← กลับ</button>
+                </div>
+
+                <!-- Date Picker -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">เลือกวันที่:</label>
+                    <input type="date" id="attendanceDate" class="border border-gray-300 rounded-lg px-3 py-2" onchange="loadAttendanceData()">
+                </div>
+
+                <!-- GPS Info -->
+                <div id="gpsInfo" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p class="text-blue-800">📍 ตำแหน่งปัจจุบัน: <span id="currentLocation">กำลังโหลด...</span></p>
+                </div>
+
+                <!-- Student List -->
+                <div id="studentList" class="space-y-3 mb-6"></div>
+
+                <!-- Save Button -->
+                <div class="text-center space-y-3">
+                    <button onclick="saveAttendance()" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold">💾 บันทึกข้อมูล</button>
+                    <br>
+                    <button onclick="sendToGoogleSheets()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">📊 ส่งไป Google Sheets</button>
+                </div>
+
+                <!-- Auto Result Display -->
+                <div id="saveResult" class="mt-4 hidden">
+                    <div class="auto-result text-center">
+                        <div class="text-2xl mb-3">🎉</div>
+                        <h3 class="text-xl font-bold mb-4">ผลการบันทึกข้อมูล</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <p class="text-sm opacity-90">สถานะการบันทึก</p>
+                                <p class="font-bold text-lg">✅ บันทึกข้อมูลเรียบร้อย</p>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <p class="text-sm opacity-90">เปอร์เซ็นต์การมาเรียนวันนี้</p>
+                                <p class="font-bold text-lg" id="attendancePercentage">📊 0%</p>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <p class="text-sm opacity-90">เวลาเช็คชื่อ</p>
+                                <p class="font-bold text-lg" id="checkTime">⏰ --:-- น.</p>
+                            </div>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <p class="text-sm opacity-90">พิกัด GPS</p>
+                                <p class="font-bold text-lg" id="gpsCoordinates">📍 ภายในมหาวิทยาลัย</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 bg-white bg-opacity-20 rounded-lg p-3">
+                            <p class="text-sm opacity-90">สรุปข้อมูลวันนี้</p>
+                            <p class="font-bold" id="dailySummary">มีนักศึกษาเข้าร่วมกิจกรรม 0 คน จากทั้งหมด 0 คน</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Students Page -->
+        <div id="managePage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">👥 จัดการข้อมูลนักศึกษา</h2>
+
+                <!-- Add Student Form -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">เพิ่มนักศึกษาใหม่</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="newStudentId" placeholder="รหัสนักศึกษา" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <input type="text" id="newStudentName" placeholder="ชื่อ-นามสกุล" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <select id="newStudentDept" class="border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">เลือกสาขา</option>
+                            <option value="accounting">บัญชี</option>
+                            <option value="management">การจัดการ</option>
+                            <option value="digital">นิเทศศาสตร์ดิจิทัล</option>
+                            <option value="it">เทคโนโลยีสารสนเทศ</option>
+                            <option value="sports">วิทยาศาสตร์การกีฬา</option>
+                            <option value="marketing">นวัตกรรมการตลาด</option>
+                        </select>
+                        <select id="newStudentYear" class="border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="">เลือกชั้นปี</option>
+                            <option value="1">ปี 1</option>
+                            <option value="2">ปี 2</option>
+                            <option value="3">ปี 3</option>
+                            <option value="4">ปี 4</option>
+                        </select>
+                    </div>
+                    <button onclick="addStudent()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">➕ เพิ่มนักศึกษา</button>
+                </div>
+
+                <!-- Students List -->
+                <div id="manageStudentList"></div>
+            </div>
+        </div>
+
+        <!-- Daily Report Page -->
+        <div id="dailyPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 รายงานรายวัน</h2>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">เลือกวันที่:</label>
+                    <input type="date" id="reportDate" class="border border-gray-300 rounded-lg px-3 py-2" onchange="loadDailyReport()">
+                </div>
+
+                <div id="dailyReportContent"></div>
+            </div>
+        </div>
+
+        <!-- Summary Report Page -->
+        <div id="summaryPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📈 สรุปผลปลายเทอม</h2>
+                <div id="summaryReportContent"></div>
+            </div>
+        </div>
+
+        <!-- Behavior Notes Page -->
+        <div id="behaviorPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📝 บันทึกพฤติกรรม</h2>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">เลือกวันที่:</label>
+                    <input type="date" id="behaviorDate" class="border border-gray-300 rounded-lg px-3 py-2" onchange="loadBehaviorNotes()">
+                </div>
+
+                <div id="behaviorNotesContent"></div>
+            </div>
+        </div>
+
+        <!-- Google Sheets Settings Page -->
+        <div id="settingsPage" class="page hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">⚙️ ตั้งค่า Google Sheets</h2>
+
+                <!-- Instructions -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-3">📋 วิธีการตั้งค่า Google Sheets (ละเอียด)</h3>
+
+                    <div class="space-y-4 text-sm text-blue-700">
+                        <div class="bg-white rounded p-3">
+                            <h4 class="font-semibold mb-2">🔧 ขั้นตอนที่ 1: สร้าง Google Apps Script</h4>
+                            <ol class="list-decimal list-inside space-y-1 ml-2">
+                                <li>เปิด <a href="https://script.google.com" target="_blank" class="underline text-blue-600">script.google.com</a></li>
+                                <li>คลิก "โครงการใหม่" (New Project)</li>
+                                <li>ลบโค้ดเดิมและวางโค้ดด้านล่าง</li>
+                                <li>บันทึกโครงการ (Ctrl+S) ตั้งชื่อ "MITCheck-Sync"</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-white rounded p-3">
+                            <h4 class="font-semibold mb-2">📊 ขั้นตอนที่ 2: สร้าง Google Sheets</h4>
+                            <ol class="list-decimal list-inside space-y-1 ml-2">
+                                <li>เปิด <a href="https://sheets.google.com" target="_blank" class="underline text-blue-600">sheets.google.com</a></li>
+                                <li>สร้างชีทใหม่ ตั้งชื่อ "MITCheck-Data"</li>
+                                <li>คัดลอก ID ของชีท (จาก URL หลัง /d/ และก่อน /edit)</li>
+                                <li>ใส่ ID ในช่องด้านล่าง</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-white rounded p-3">
+                            <h4 class="font-semibold mb-2">🚀 ขั้นตอนที่ 3: Deploy Web App</h4>
+                            <ol class="list-decimal list-inside space-y-1 ml-2">
+                                <li>ใน Apps Script คลิก "Deploy" > "New deployment"</li>
+                                <li>เลือก Type: "Web app"</li>
+                                <li>Execute as: "Me"</li>
+                                <li>Who has access: "Anyone"</li>
+                                <li>คลิก "Deploy" และคัดลอก URL</li>
+                                <li>ใส่ URL ในช่องด้านล่าง</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Apps Script Code -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-semibold mb-3">📝 โค้ด Google Apps Script (คัดลอกไปวาง)</h3>
+<textarea readonly class="w-full h-64 bg-white border border-gray-300 rounded p-3 text-sm font-mono" onclick="this.select()">function doPost(e) {
+  try {
+    // รับข้อมูลจาก MITCheck
+    const data = JSON.parse(e.postData.contents);
+    
+    // เปิด Google Sheets (ใส่ ID ของชีทคุณ)
+    const SHEET_ID = 'ใส่_SHEET_ID_ของคุณที่นี่';
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+    
+    // ตรวจสอบว่ามี Header หรือยัง
+    if (sheet.getLastRow() === 0) {
+      sheet.getRange(1, 1, 1, 8).setValues([[
+        'วันที่', 'เวลา', 'รหัสนักศึกษา', 'ชื่อ-สกุล', 
+        'สาขา', 'ชั้นปี', 'สถานะ', 'พิกัด GPS'
+      ]]);
+      
+      // จัดรูปแบบ Header
+      const headerRange = sheet.getRange(1, 1, 1, 8);
+      headerRange.setBackground('#6213a9');
+      headerRange.setFontColor('white');
+      headerRange.setFontWeight('bold');
+    }
+    
+    // เพิ่มข้อมูลใหม่
+    data.records.forEach(record => {
+      sheet.appendRow([
+        record.date,
+        record.time,
+        record.studentId,
+        record.studentName,
+        record.department,
+        record.year,
+        record.status,
+        record.gps
+      ]);
+    });
+    
+    // ส่งผลลัพธ์กลับ
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: `บันทึก ${data.records.length} รายการเรียบร้อย`,
+        timestamp: new Date().toLocaleString('th-TH')
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</textarea>
+                </div>
+
+                <!-- Configuration Form -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">🔗 Web App URL:</label>
+                        <input type="url" id="webAppUrl" placeholder="https://script.google.com/macros/s/YOUR_ID/exec"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                               value="https://script.google.com/macros/s/AKfycbwMBhYZCXuWCovPjkIxjiV8jeN-jgLHZlt7DQ5QGvJg8O4j5yf2wTnRrd89aPSdC9A/exec">
+                        <p class="text-xs text-gray-500 mt-1">URL ที่ได้จากการ Deploy Web App</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">📊 Google Sheets ID:</label>
+                        <input type="text" id="sheetsId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                               value="">
+                        <p class="text-xs text-gray-500 mt-1">ID ของ Google Sheets (จาก URL)</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex space-x-4">
+                    <button onclick="saveGoogleSheetsConfig()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">💾 บันทึกการตั้งค่า</button>
+                    <button onclick="testGoogleSheetsConnection()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">🧪 ทดสอบการเชื่อมต่อ</button>
+                </div>
+
+                <!-- Connection Status -->
+                <div id="connectionStatus" class="mt-4 hidden"></div>
+
+                <!-- Sample Data Format -->
+                <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-yellow-800 mb-3">📋 รูปแบบข้อมูลที่ส่งไป Google Sheets</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white border text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-2 py-1 border text-left">วันที่</th>
+                                    <th class="px-2 py-1 border text-left">เวลา</th>
+                                    <th class="px-2 py-1 border text-left">รหัสนักศึกษา</th>
+                                    <th class="px-2 py-1 border text-left">ชื่อ-สกุล</th>
+                                    <th class="px-2 py-1 border text-left">สาขา</th>
+                                    <th class="px-2 py-1 border text-left">ชั้นปี</th>
+                                    <th class="px-2 py-1 border text-left">สถานะ</th>
+                                    <th class="px-2 py-1 border text-left">พิกัด GPS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="px-2 py-1 border">2024-01-15</td>
+                                    <td class="px-2 py-1 border">08:30:00</td>
+                                    <td class="px-2 py-1 border">653070310202</td>
+                                    <td class="px-2 py-1 border">น.ส.จุฑามาศ อินก่ำ</td>
+                                    <td class="px-2 py-1 border">บัญชี</td>
+                                    <td class="px-2 py-1 border">1</td>
+                                    <td class="px-2 py-1 border">เข้าร่วมกิจกรรม</td>
+                                    <td class="px-2 py-1 border">17.4138, 104.7734</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentDepartment = '';
+        let currentYear = '';
+        let currentLocation = null;
+        let studentsData = {};
+        let attendanceData = {};
+        let behaviorNotes = {};
+
+        // NEW: กิจกรรม + การลงทะเบียน (Global)
+        let activitiesData = {};        // { actId: { id, name, capacity, createdAt } }
+        let registrationsData = {};     // { actId: [ { fullname, studentId, year, dept, gps, photoDataUrl, ts } ] }
+        let currentActivityId = null;
+
+        // Data persistence functions
+        function saveToLocalStorage() {
+            const data = {
+                students: studentsData,
+                attendance: attendanceData,
+                behavior: behaviorNotes,
+                activities: activitiesData,        // NEW
+                registrations: registrationsData,  // NEW
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('mitcheck_data', JSON.stringify(data));
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('mitcheck_data');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    studentsData = data.students || {};
+                    attendanceData = data.attendance || {};
+                    behaviorNotes = data.behavior || {};
+                    activitiesData = data.activities || {};          // NEW
+                    registrationsData = data.registrations || {};    // NEW
+
+                    // Show data loaded message
+                    showDataLoadedMessage(data.lastUpdated);
+                    return true;
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+            }
+            return false;
+        }
+
+        function showDataLoadedMessage(lastUpdated) {
+            const date = new Date(lastUpdated);
+            const formattedDate = date.toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'data-persistence text-center mb-4';
+            messageDiv.innerHTML = `<p class="text-sm">📂 โหลดข้อมูลเดิมเรียบร้อย - อัปเดตล่าสุด: ${formattedDate}</p>`;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.children[1]);
+
+            setTimeout(() => { messageDiv.remove(); }, 5000);
+        }
+
+        // Initialize sample data
+        function initializeData() {
+            // Try to load existing data first
+            const dataLoaded = loadFromLocalStorage();
+
+            // If no existing data, create sample data
+            if (!dataLoaded) {
+                studentsData = {
+                    'accounting-1': [
+                        { id: '653070310202', name: 'น.ส.จุฑามาศ อินก่ำ', photo: '👩‍🎓' },
+                        { id: '653070310012', name: 'น.ส.ศุภลักษณ์ สีหา', photo: '👩‍🎓' }
+                    ],
+                    'accounting-2': [
+                        { id: '653070320101', name: 'นายสมชาย ใจดี', photo: '👨‍🎓' },
+                        { id: '653070320102', name: 'น.ส.สมหญิง รักเรียน', photo: '👩‍🎓' }
+                    ],
+                    'management-1': [
+                        { id: '653070410101', name: 'นายธนากร บริหาร', photo: '👨‍🎓' },
+                        { id: '653070410102', name: 'น.ส.วิภาดา จัดการ', photo: '👩‍🎓' }
+                    ],
+                    'it-1': [
+                        { id: '653070510101', name: 'นายโปรแกรม เมอร์', photo: '👨‍💻' },
+                        { id: '653070510102', name: 'น.ส.เว็บไซต์ ดีไซน์', photo: '👩‍💻' }
+                    ]
+                };
+                attendanceData = {};
+                behaviorNotes = {};
+                activitiesData = activitiesData || {};      // NEW
+                registrationsData = registrationsData || {}; // NEW
+                saveToLocalStorage();
+            }
+
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attendanceDate').value = today;
+            document.getElementById('reportDate').value = today;
+            document.getElementById('behaviorDate').value = today;
+        }
+
+        // Clear all data function
+        function clearAllData() {
+            if (confirm('⚠️ คุณต้องการลบข้อมูลทั้งหมดหรือไม่?\n\nข้อมูลที่จะถูกลบ:\n- ข้อมูลนักศึกษาทั้งหมด\n- ประวัติการเช็คชื่อทั้งหมด\n- บันทึกพฤติกรรมทั้งหมด\n- ข้อมูลกิจกรรมและการลงทะเบียนทั้งหมด\n\n⚠️ การกระทำนี้ไม่สามารถยกเลิกได้!')) {
+                localStorage.removeItem('mitcheck_data');
+                studentsData = {};
+                attendanceData = {};
+                behaviorNotes = {};
+                activitiesData = {};
+                registrationsData = {};
+                alert('✅ ลบข้อมูลทั้งหมดเรียบร้อยแล้ว\nระบบจะรีเฟรชหน้าเว็บ');
+                location.reload();
+            }
+        }
+
+        // Get GPS location
+        function getLocation() {
+            document.getElementById('gpsStatus').classList.remove('hidden');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        document.getElementById('currentLocation').textContent =
+                            `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
+                        document.getElementById('gpsStatus').classList.add('hidden');
+                    },
+                    function(error) {
+                        document.getElementById('currentLocation').textContent = 'ไม่สามารถเข้าถึงตำแหน่งได้';
+                        document.getElementById('gpsStatus').classList.add('hidden');
+                        // Use demo location for testing
+                        currentLocation = { latitude: 17.4138, longitude: 104.7734 }; // Nakhon Phanom University
+                    }
+                );
+            } else {
+                document.getElementById('currentLocation').textContent = 'เบราว์เซอร์ไม่รองรับ GPS';
+                document.getElementById('gpsStatus').classList.add('hidden');
+                // Use demo location for testing
+                currentLocation = { latitude: 17.4138, longitude: 104.7734 };
+            }
+        }
+
+        // Show page
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId + 'Page').classList.remove('hidden');
+
+            if (pageId === 'manage') {
+                loadManageStudents();
+            } else if (pageId === 'daily') {
+                loadDailyReport();
+            } else if (pageId === 'summary') {
+                loadSummaryReport();
+            } else if (pageId === 'behavior') {
+                loadBehaviorNotes();
+            } else if (pageId === 'settings') {
+                loadGoogleSheetsConfig();
+            } else if (pageId === 'activity') {       // NEW
+                loadActivitiesPage();
+            }
+        }
+
+        // Show check-in page
+        function showCheckIn(department, year) {
+            currentDepartment = department;
+            currentYear = year;
+
+            const deptNames = {
+                'accounting': 'บัญชี',
+                'management': 'การจัดการ',
+                'digital': 'นิเทศศาสตร์ดิจิทัล',
+                'it': 'เทคโนโลยีสารสนเทศ',
+                'sports': 'วิทยาศาสตร์การกีฬา',
+                'marketing': 'นวัตกรรมการตลาด'
+            };
+
+            document.getElementById('checkinTitle').textContent = `เช็คชื่อ ${deptNames[department]} ชั้นปีที่ ${year}`;
+            document.getElementById('checkinSubtitle').textContent = `เลือกสถานะของนักศึกษา`;
+
+            showPage('checkin');
+            getLocation();
+            loadStudentList();
+        }
+
+        // Load student list
+        function loadStudentList() {
+            const key = `${currentDepartment}-${currentYear}`;
+            const students = studentsData[key] || [];
+            const studentListDiv = document.getElementById('studentList');
+
+            studentListDiv.innerHTML = '';
+
+            students.forEach(student => {
+                const studentRow = document.createElement('div');
+                studentRow.className = 'student-row bg-gray-50 rounded-lg p-4 border border-gray-200';
+                studentRow.id = `student-${student.id}`;
+
+                studentRow.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-4xl">${student.photo}</div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">${student.name}</h3>
+                                <p class="text-sm text-gray-600">${student.id}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="setStatus('${student.id}', 'present')" class="status-btn bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition-colors">✅ เข้าร่วมกิจกรรม</button>
+                            <button onclick="setStatus('${student.id}', 'absent')"  class="status-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">❌ ไม่เข้าร่วมกิจกรรม</button>
+                            <button onclick="setStatus('${student.id}', 'gps')"     class="status-btn bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600 transition-colors">📍 ดึงพิกัด</button>
+                        </div>
+                    </div>
+                `;
+
+                studentListDiv.appendChild(studentRow);
+            });
+        }
+
+        // Set attendance status
+        function setStatus(studentId, status) {
+            const studentRow = document.getElementById(`student-${studentId}`);
+            const date = document.getElementById('attendanceDate').value;
+
+            // Remove existing status classes
+            studentRow.classList.remove('status-present', 'status-absent', 'status-gps');
+
+            // Add new status class
+            studentRow.classList.add(`status-${status}`);
+
+            // Store attendance data
+            if (!attendanceData[date]) {
+                attendanceData[date] = {};
+            }
+
+            attendanceData[date][studentId] = {
+                status: status,
+                timestamp: new Date().toLocaleString('th-TH'),
+                location: currentLocation,
+                department: currentDepartment,
+                year: currentYear
+            };
+        }
+
+        // Save attendance
+        function saveAttendance() {
+            const date = document.getElementById('attendanceDate').value;
+            const dayData = attendanceData[date] || {};
+            const key = `${currentDepartment}-${currentYear}`;
+            const students = studentsData[key] || [];
+
+            let presentCount = 0;
+            let absentCount = 0;
+            let gpsCount = 0;
+            let totalCount = students.length;
+
+            students.forEach(student => {
+                if (dayData[student.id]) {
+                    const status = dayData[student.id].status;
+                    if (status === 'present') presentCount++;
+                    else if (status === 'absent') absentCount++;
+                    else if (status === 'gps') gpsCount++;
+                }
+            });
+
+            const percentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+            const currentTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            // Update auto result display
+            document.getElementById('attendancePercentage').textContent = `📊 ${percentage}%`;
+            document.getElementById('checkTime').textContent = `⏰ ${currentTime} น.`;
+
+            if (currentLocation) {
+                const lat = currentLocation.latitude.toFixed(4);
+                const lng = currentLocation.longitude.toFixed(4);
+                document.getElementById('gpsCoordinates').textContent = `📍 ${lat}, ${lng} (ภายในมหาวิทยาลัย)`;
+            }
+
+            document.getElementById('dailySummary').textContent =
+                `มีนักศึกษาเข้าร่วมกิจกรรม ${presentCount} คน จากทั้งหมด ${totalCount} คน (ขาด ${absentCount} คน, ดึงพิกัด ${gpsCount} คน)`;
+
+            // Save to localStorage
+            saveToLocalStorage();
+
+            // Show result
+            document.getElementById('saveResult').classList.remove('hidden');
+
+            // Auto hide after 8 seconds
+            setTimeout(() => { document.getElementById('saveResult').classList.add('hidden'); }, 8000);
+        }
+
+        // Add student
+        function addStudent() {
+            const id = document.getElementById('newStudentId').value;
+            const name = document.getElementById('newStudentName').value;
+            const dept = document.getElementById('newStudentDept').value;
+            const year = document.getElementById('newStudentYear').value;
+
+            if (!id || !name || !dept || !year) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            // Check if student ID already exists
+            const key = `${dept}-${year}`;
+            if (studentsData[key] && studentsData[key].find(s => s.id === id)) {
+                alert('รหัสนักศึกษานี้มีอยู่แล้ว กรุณาใช้รหัสอื่น');
+                return;
+            }
+
+            if (!studentsData[key]) {
+                studentsData[key] = [];
+            }
+
+            const photo = '👤'; // emoji แทนรูป
+
+            studentsData[key].push({ id, name, photo });
+
+            // Save to localStorage
+            saveToLocalStorage();
+
+            // Clear form
+            document.getElementById('newStudentId').value = '';
+            document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentDept').value = '';
+            document.getElementById('newStudentYear').value = '';
+
+            loadManageStudents();
+            alert('✅ เพิ่มนักศึกษาเรียบร้อยแล้ว\n💾 ข้อมูลถูกบันทึกอัตโนมัติ');
+        }
+
+        // Load manage students
+        function loadManageStudents() {
+            const manageList = document.getElementById('manageStudentList');
+            manageList.innerHTML = '';
+
+            Object.keys(studentsData).forEach(key => {
+                const [dept, year] = key.split('-');
+                const deptNames = {
+                    'accounting': 'บัญชี',
+                    'management': 'การจัดการ',
+                    'digital': 'นิเทศศาสตร์ดิจิทัล',
+                    'it': 'เทคโนโลยีสารสนเทศ',
+                    'sports': 'วิทยาศาสตร์การกีฬา',
+                    'marketing': 'นวัตกรรมการตลาด'
+                };
+
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'mb-6 bg-gray-50 rounded-lg p-4';
+                sectionDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-3">${deptNames[dept]} ชั้นปีที่ ${year}</h3>
+                    <div class="space-y-2" id="students-${key}"></div>
+                `;
+
+                manageList.appendChild(sectionDiv);
+
+                const studentsDiv = document.getElementById(`students-${key}`);
+                studentsData[key].forEach((student, index) => {
+                    const studentDiv = document.createElement('div');
+                    studentDiv.className = 'flex items-center justify-between bg-white p-3 rounded border';
+                    studentDiv.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl">${student.photo}</span>
+                            <div>
+                                <p class="font-medium">${student.name}</p>
+                                <p class="text-sm text-gray-600">${student.id}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeStudent('${key}', ${index})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">🗑️ ลบ</button>
+                    `;
+                    studentsDiv.appendChild(studentDiv);
+                });
+            });
+        }
+
+        // Remove student
+        function removeStudent(key, index) {
+            const student = studentsData[key][index];
+            if (confirm(`ต้องการลบนักศึกษาคนนี้หรือไม่?\n\n${student.name}\n${student.id}\n\n⚠️ ข้อมูลการเช็คชื่อของนักศึกษาคนนี้จะถูกลบด้วย`)) {
+                // Remove student from students data
+                studentsData[key].splice(index, 1);
+
+                // Remove attendance records for this student
+                Object.keys(attendanceData).forEach(date => {
+                    if (attendanceData[date][student.id]) {
+                        delete attendanceData[date][student.id];
+                    }
+                });
+
+                // Remove behavior notes for this student
+                Object.keys(behaviorNotes).forEach(noteKey => {
+                    if (noteKey.includes(student.id)) {
+                        delete behaviorNotes[noteKey];
+                    }
+                });
+
+                // Save to localStorage
+                saveToLocalStorage();
+
+                loadManageStudents();
+                alert('✅ ลบนักศึกษาเรียบร้อยแล้ว\n💾 ข้อมูลถูกบันทึกอัตโนมัติ');
+            }
+        }
+
+        // Load daily report
+        function loadDailyReport() {
+            const date = document.getElementById('reportDate').value;
+            const reportContent = document.getElementById('dailyReportContent');
+
+            if (!date) {
+                reportContent.innerHTML = '<p class="text-gray-500">กรุณาเลือกวันที่</p>';
+                return;
+            }
+
+            const dayData = attendanceData[date] || {};
+
+            if (Object.keys(dayData).length === 0) {
+                reportContent.innerHTML = '<p class="text-gray-500">ไม่มีข้อมูลการเช็คชื่อในวันนี้</p>';
+                return;
+            }
+
+            let tableHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 border text-left">วันที่</th>
+                                <th class="px-4 py-2 border text-left">รหัสนักศึกษา</th>
+                                <th class="px-4 py-2 border text-left">ชื่อ-สกุล</th>
+                                <th class="px-4 py-2 border text-left">สถานะ</th>
+                                <th class="px-4 py-2 border text-left">เวลาเช็ค</th>
+                                <th class="px-4 py-2 border text-left">พิกัด GPS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            Object.keys(dayData).forEach(studentId => {
+                const record = dayData[studentId];
+                const key = `${record.department}-${record.year}`;
+                const student = studentsData[key]?.find(s => s.id === studentId);
+
+                const statusText = {
+                    'present': '✅ เข้าร่วมกิจกรรม',
+                    'absent': '❌ ไม่เข้าร่วมกิจกรรม',
+                    'gps': '📍 ดึงพิกัด'
+                };
+
+                const gpsText = record.location ?
+                    `${record.location.latitude.toFixed(6)}, ${record.location.longitude.toFixed(6)}` :
+                    'ไม่มีข้อมูล';
+
+                tableHTML += `
+                    <tr>
+                        <td class="px-4 py-2 border">${date}</td>
+                        <td class="px-4 py-2 border">${studentId}</td>
+                        <td class="px-4 py-2 border">${student ? student.name : 'ไม่พบข้อมูล'}</td>
+                        <td class="px-4 py-2 border">${statusText[record.status]}</td>
+                        <td class="px-4 py-2 border">${record.timestamp}</td>
+                        <td class="px-4 py-2 border">${gpsText}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table></div>';
+            reportContent.innerHTML = tableHTML;
+        }
+
+        // Load summary report
+        function loadSummaryReport() {
+            const reportContent = document.getElementById('summaryReportContent');
+
+            // Calculate summary for all students
+            let summaryData = {};
+
+            // Initialize summary data
+            Object.keys(studentsData).forEach(key => {
+                studentsData[key].forEach(student => {
+                    summaryData[student.id] = { name: student.name, present: 0, absent: 0, total: 0 };
+                });
+            });
+
+            // Count attendance
+            Object.keys(attendanceData).forEach(date => {
+                Object.keys(attendanceData[date]).forEach(studentId => {
+                    if (summaryData[studentId]) {
+                        const status = attendanceData[date][studentId].status;
+                        summaryData[studentId].total++;
+                        if (status === 'present') { summaryData[studentId].present++; }
+                        else if (status === 'absent') { summaryData[studentId].absent++; }
+                    }
+                });
+            });
+
+            let tableHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 border text-left">รหัสนักศึกษา</th>
+                                <th class="px-4 py-2 border text-left">ชื่อ-สกุล</th>
+                                <th class="px-4 py-2 border text-center">เข้าร่วมกิจกรรม</th>
+                                <th class="px-4 py-2 border text-center">ไม่เข้าร่วมกิจกรรม</th>
+                                <th class="px-4 py-2 border text-center">% เข้าร่วมกิจกรรม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            Object.keys(summaryData).forEach(studentId => {
+                const data = summaryData[studentId];
+                const percentage = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+
+                tableHTML += `
+                    <tr>
+                        <td class="px-4 py-2 border">${studentId}</td>
+                        <td class="px-4 py-2 border">${data.name}</td>
+                        <td class="px-4 py-2 border text-center">${data.present}</td>
+                        <td class="px-4 py-2 border text-center">${data.absent}</td>
+                        <td class="px-4 py-2 border text-center">${percentage}%</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table></div>';
+            reportContent.innerHTML = tableHTML;
+        }
+
+        // Load behavior notes
+        function loadBehaviorNotes() {
+            const date = document.getElementById('behaviorDate').value;
+            const notesContent = document.getElementById('behaviorNotesContent');
+
+            if (!date) {
+                notesContent.innerHTML = '<p class="text-gray-500">กรุณาเลือกวันที่</p>';
+                return;
+            }
+
+            const dayData = attendanceData[date] || {};
+
+            let notesHTML = '<div class="space-y-4">';
+
+            Object.keys(dayData).forEach(studentId => {
+                const record = dayData[studentId];
+                const key = `${record.department}-${record.year}`;
+                const student = studentsData[key]?.find(s => s.id === studentId);
+
+                if (student) {
+                    const noteKey = `${date}-${studentId}`;
+                    const currentNote = behaviorNotes[noteKey] || '';
+
+                    notesHTML += `
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <span class="text-2xl">${student.photo}</span>
+                                <div>
+                                    <h3 class="font-semibold">${student.name}</h3>
+                                    <p class="text-sm text-gray-600">${studentId}</p>
+                                </div>
+                            </div>
+                            <textarea 
+                                id="note-${studentId}" 
+                                placeholder="บันทึกพฤติกรรม เช่น มาช้า, ช่วยงานครู, ไม่ตั้งใจเรียน..."
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 h-20 resize-none"
+                                onchange="saveBehaviorNote('${date}', '${studentId}')"
+                            >${currentNote}</textarea>
+                        </div>
+                    `;
+                }
+            });
+
+            notesHTML += '</div>';
+
+            if (Object.keys(dayData).length === 0) {
+                notesHTML = '<p class="text-gray-500">ไม่มีข้อมูลการเช็คชื่อในวันนี้</p>';
+            }
+
+            notesContent.innerHTML = notesHTML;
+        }
+
+        // Save behavior note
+        function saveBehaviorNote(date, studentId) {
+            const noteText = document.getElementById(`note-${studentId}`).value;
+            const noteKey = `${date}-${studentId}`;
+            behaviorNotes[noteKey] = noteText;
+
+            // Save to localStorage
+            saveToLocalStorage();
+
+            // Show brief confirmation
+            const noteElement = document.getElementById(`note-${studentId}`);
+            const originalBorder = noteElement.style.borderColor;
+            noteElement.style.borderColor = '#16a34a';
+            noteElement.style.borderWidth = '2px';
+
+            setTimeout(() => {
+                noteElement.style.borderColor = originalBorder;
+                noteElement.style.borderWidth = '1px';
+            }, 1000);
+        }
+
+        // Load attendance data for selected date
+        function loadAttendanceData() {
+            const date = document.getElementById('attendanceDate').value;
+            const key = `${currentDepartment}-${currentYear}`;
+            const students = studentsData[key] || [];
+
+            // Refresh student list first
+            loadStudentList();
+
+            // Load existing attendance data for this date
+            if (attendanceData[date]) {
+                students.forEach(student => {
+                    if (attendanceData[date][student.id]) {
+                        const status = attendanceData[date][student.id].status;
+                        const studentRow = document.getElementById(`student-${student.id}`);
+                        if (studentRow) {
+                            // Remove existing status classes
+                            studentRow.classList.remove('status-present', 'status-absent', 'status-gps');
+                            // Add the saved status class
+                            studentRow.classList.add(`status-${status}`);
+                        }
+                    }
+                });
+
+                // Show message that data was loaded
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-4';
+                messageDiv.innerHTML = `📂 โหลดข้อมูลการเช็คชื่อวันที่ ${date} เรียบร้อย`;
+
+                const studentListDiv = document.getElementById('studentList');
+                studentListDiv.parentNode.insertBefore(messageDiv, studentListDiv);
+
+                setTimeout(() => { messageDiv.remove(); }, 3000);
+            }
+        }
+
+        // Google Sheets Configuration
+        let googleSheetsConfig = {
+            // ใช้ URL ที่คุณให้มาเป็นค่าเริ่มต้น
+            webAppUrl: 'https://script.google.com/macros/s/AKfycbwMBhYZCXuWCovPjkIxjiV8jeN-jgLHZlt7DQ5QGvJg8O4j5yf2wTnRrd89aPSdC9A/exec',
+            sheetsId: ''
+        };
+
+        // Load Google Sheets configuration
+        function loadGoogleSheetsConfig() {
+            const savedConfig = localStorage.getItem('mitcheck_google_config');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    googleSheetsConfig.webAppUrl = config.webAppUrl || googleSheetsConfig.webAppUrl;
+                    googleSheetsConfig.sheetsId = config.sheetsId || '';
+                    document.getElementById('webAppUrl').value = googleSheetsConfig.webAppUrl;
+                    document.getElementById('sheetsId').value = googleSheetsConfig.sheetsId;
+                } catch (error) {
+                    console.error('Error loading Google Sheets config:', error);
+                }
+            } else {
+                // Set default URL
+                document.getElementById('webAppUrl').value = googleSheetsConfig.webAppUrl;
+            }
+        }
+
+        // Save Google Sheets configuration
+        function saveGoogleSheetsConfig() {
+            const webAppUrl = document.getElementById('webAppUrl').value.trim();
+            const sheetsId = document.getElementById('sheetsId').value.trim();
+
+            if (!webAppUrl || !sheetsId) {
+                alert('❌ กรุณากรอก Web App URL และ Sheets ID ให้ครบถ้วน');
+                return;
+            }
+
+            googleSheetsConfig = { webAppUrl, sheetsId };
+            localStorage.setItem('mitcheck_google_config', JSON.stringify(googleSheetsConfig));
+            showConnectionStatus('success', '✅ บันทึกการตั้งค่าเรียบร้อย');
+        }
+
+        // Test Google Sheets connection
+        function testGoogleSheetsConnection() {
+            if (!googleSheetsConfig.webAppUrl) {
+                alert('❌ กรุณาตั้งค่า Web App URL ก่อน');
+                return;
+            }
+
+            showConnectionStatus('loading', '🔄 กำลังทดสอบการเชื่อมต่อ...');
+
+            // Create test data
+            const testData = {
+                records: [{
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toLocaleTimeString('th-TH'),
+                    studentId: 'TEST001',
+                    studentName: 'ทดสอบระบบ',
+                    department: 'ทดสอบ',
+                    year: '1',
+                    status: 'ทดสอบการเชื่อมต่อ',
+                    gps: '17.4138, 104.7734'
+                }]
+            };
+
+            fetch(googleSheetsConfig.webAppUrl, {
+                method: 'POST',
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showConnectionStatus('success', `✅ เชื่อมต่อสำเร็จ! ${data.message}`);
+                } else {
+                    showConnectionStatus('error', `❌ เกิดข้อผิดพลาด: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                showConnectionStatus('error', `❌ ไม่สามารถเชื่อมต่อได้: ${error.message}`);
+            });
+        }
+
+        // Show connection status
+        function showConnectionStatus(type, message) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.classList.remove('hidden');
+
+            let bgColor = '', textColor = '';
+            switch (type) {
+                case 'success': bgColor = 'bg-green-100 border-green-400'; textColor = 'text-green-700'; break;
+                case 'error':   bgColor = 'bg-red-100 border-red-400';   textColor = 'text-red-700';   break;
+                case 'loading': bgColor = 'bg-blue-100 border-blue-400';  textColor = 'text-blue-700';  break;
+            }
+
+            statusDiv.className = `mt-4 p-4 rounded-lg border ${bgColor} ${textColor}`;
+            statusDiv.innerHTML = message;
+
+            if (type !== 'loading') {
+                setTimeout(() => { statusDiv.classList.add('hidden'); }, 5000);
+            }
+        }
+
+        // Send data to Google Sheets (เช็คชื่อรายวัน)
+        function sendToGoogleSheets() {
+            if (!googleSheetsConfig.webAppUrl) {
+                alert('❌ กรุณาตั้งค่า Google Sheets ก่อน\nไปที่เมนู "ตั้งค่า Google Sheets"');
+                return;
+            }
+
+            const date = document.getElementById('attendanceDate').value;
+            const dayData = attendanceData[date] || {};
+
+            if (Object.keys(dayData).length === 0) {
+                alert('❌ ไม่มีข้อมูลการเช็คชื่อในวันที่เลือก');
+                return;
+            }
+
+            // Prepare data for Google Sheets
+            const records = [];
+            const deptNames = {
+                'accounting': 'บัญชี',
+                'management': 'การจัดการ',
+                'digital': 'นิเทศศาสตร์ดิจิทัล',
+                'it': 'เทคโนโลยีสารสนเทศ',
+                'sports': 'วิทยาศาสตร์การกีฬา',
+                'marketing': 'นวัตกรรมการตลาด'
+            };
+
+            const statusNames = {
+                'present': 'เข้าร่วมกิจกรรม',
+                'absent': 'ไม่เข้าร่วมกิจกรรม',
+                'gps': 'ดึงพิกัด'
+            };
+
+            Object.keys(dayData).forEach(studentId => {
+                const record = dayData[studentId];
+                const key = `${record.department}-${record.year}`;
+                const student = studentsData[key]?.find(s => s.id === studentId);
+
+                if (student) {
+                    const gpsText = record.location ?
+                        `${record.location.latitude.toFixed(6)}, ${record.location.longitude.toFixed(6)}` :
+                        'ไม่มีข้อมูล';
+
+                    records.push({
+                        date: date,
+                        time: record.timestamp.split(' ')[1] || new Date().toLocaleTimeString('th-TH'),
+                        studentId: studentId,
+                        studentName: student.name,
+                        department: deptNames[record.department] || record.department,
+                        year: record.year,
+                        status: statusNames[record.status] || record.status,
+                        gps: gpsText
+                    });
+                }
+            });
+
+            if (records.length === 0) {
+                alert('❌ ไม่มีข้อมูลที่จะส่ง');
+                return;
+            }
+
+            // Show loading message
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            loadingDiv.innerHTML = '🔄 กำลังส่งข้อมูลไป Google Sheets...';
+            document.body.appendChild(loadingDiv);
+
+            // Send to Google Sheets
+            fetch(googleSheetsConfig.webAppUrl, {
+                method: 'POST',
+                body: JSON.stringify({ records: records })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.remove();
+
+                if (data.success) {
+                    // Show success message
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                    successDiv.innerHTML = `
+                        <div class="text-center">
+                            <div class="text-2xl mb-2">🎉</div>
+                            <div class="font-bold">ส่งข้อมูลสำเร็จ!</div>
+                            <div class="text-sm mt-1">${data.message}</div>
+                            <div class="text-xs mt-1">เวลา: ${data.timestamp}</div>
+                        </div>
+                    `;
+                    document.body.appendChild(successDiv);
+
+                    setTimeout(() => { successDiv.remove(); }, 5000);
+
+                    // Open Google Sheets in new tab
+                    if (googleSheetsConfig.sheetsId) {
+                        const sheetsUrl = `https://docs.google.com/spreadsheets/d/${googleSheetsConfig.sheetsId}/edit`;
+                        window.open(sheetsUrl, '_blank', 'noopener,noreferrer');
+                    }
+                } else {
+                    throw new Error(data.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                }
+            })
+            .catch(error => {
+                loadingDiv.remove();
+
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                errorDiv.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">❌</div>
+                        <div class="font-bold">ส่งข้อมูลไม่สำเร็จ</div>
+                        <div class="text-sm mt-1">${error.message}</div>
+                        <div class="text-xs mt-1">กรุณาตรวจสอบการตั้งค่า</div>
+                    </div>
+                `;
+                document.body.appendChild(errorDiv);
+
+                setTimeout(() => { errorDiv.remove(); }, 8000);
+            });
+        }
+
+        // ====== เพิ่มฟังก์ชันส่งรายชื่อผู้ลงทะเบียนกิจกรรมไป Google Sheets (NEW) ======
+        function exportRegistrations(actId) {
+          if (!googleSheetsConfig.webAppUrl) {
+              alert('❌ กรุณาตั้งค่า Google Sheets ก่อน\nไปที่เมนู "ตั้งค่า Google Sheets"');
+              return;
+          }
+          const act = activitiesData[actId];
+          const regs = registrationsData[actId] || [];
+
+          if (!act) { alert('ไม่พบกิจกรรมนี้'); return; }
+          if (regs.length === 0) { alert('❌ กิจกรรมนี้ยังไม่มีผู้ลงทะเบียน'); return; }
+
+          // เตรียม Payload
+          const records = regs.map(r => {
+              const d = new Date(r.ts || Date.now());
+              const date = d.toISOString().split('T')[0];
+              const time = d.toLocaleTimeString('th-TH');
+              return {
+                  date,
+                  time,
+                  // ช่องที่ Apps Script ฝั่งนี้ใช้จริงๆคือ 8 คอลัมน์เดิม
+                  // เราจะใส่ชื่อกิจกรรมลงใน 'สถานะ' เพื่อให้เห็นว่าเป็นรายการจากกิจกรรม
+                  studentId: r.studentId,
+                  studentName: r.fullname,
+                  department: r.dept,
+                  year: r.year,
+                  status: `กิจกรรม: ${act.name}`,
+                  gps: r.gps || 'ไม่มีข้อมูล'
+              };
+          });
+
+          // แสดงสถานะกำลังส่ง
+          const toast = document.createElement('div');
+          toast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+          toast.textContent = '🔄 กำลังส่งรายชื่อไป Google Sheets...';
+          document.body.appendChild(toast);
+
+          fetch(googleSheetsConfig.webAppUrl, {
+              method: 'POST',
+              body: JSON.stringify({ type: 'registrations', records })
+          })
+          .then(res => res.json())
+          .then(data => {
+              toast.remove();
+              if (data.success) {
+                  const ok = document.createElement('div');
+                  ok.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                  ok.innerHTML = `
+                      <div class="text-center">
+                          <div class="text-2xl mb-1">🎉</div>
+                          <div class="font-bold">ส่งรายชื่อสำเร็จ!</div>
+                          <div class="text-sm mt-1">${data.message}</div>
+                          <div class="text-xs mt-1">เวลา: ${data.timestamp}</div>
+                      </div>`;
+                  document.body.appendChild(ok);
+                  setTimeout(() => ok.remove(), 6000);
+
+                  // เปิดชีต (ถ้ากรอก Sheets ID ไว้)
+                  if (googleSheetsConfig.sheetsId) {
+                      const url = `https://docs.google.com/spreadsheets/d/${googleSheetsConfig.sheetsId}/edit#gid=0`;
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                  }
+              } else {
+                  throw new Error(data.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+              }
+          })
+          .catch(err => {
+              toast.remove();
+              const bad = document.createElement('div');
+              bad.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+              bad.innerHTML = `
+                  <div class="text-center">
+                      <div class="text-2xl mb-1">❌</div>
+                      <div class="font-bold">ส่งรายชื่อไม่สำเร็จ</div>
+                      <div class="text-sm mt-1">${err.message}</div>
+                      <div class="text-xs mt-1">กรุณาตรวจสอบการตั้งค่า</div>
+                  </div>`;
+              document.body.appendChild(bad);
+              setTimeout(() => bad.remove(), 8000);
+          });
+        }
+
+        // ====== กิจกรรม กยส. (JS ฟังก์ชัน) ======
+        function genActivityId() { return 'act_' + Math.random().toString(36).slice(2, 9); }
+
+        function loadActivitiesPage() {
+            const list = document.getElementById('activityList');
+            list.innerHTML = '';
+
+            const ids = Object.keys(activitiesData);
+            if (ids.length === 0) {
+                list.innerHTML = '<div class="text-gray-500">ยังไม่มีกิจกรรมที่เปิดรับ</div>';
+                return;
+            }
+
+            ids.forEach(id => {
+                const act = activitiesData[id];
+                const regs = registrationsData[id] || [];
+                const remaining = Math.max(0, (act.capacity || 0) - regs.length);
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg border p-4 flex flex-col';
+                card.innerHTML = `
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800">${act.name}</h4>
+                        <p class="text-sm text-gray-600 mt-1">รับ: ${act.capacity} คน • ลงทะเบียนแล้ว: ${regs.length} • คงเหลือ: <span class="${remaining>0?'text-green-700':'text-red-700'} font-semibold">${remaining}</span></p>
+                        <p class="text-xs text-gray-500 mt-1">สร้างเมื่อ: ${new Date(act.createdAt).toLocaleString('th-TH')}</p>
+                    </div>
+                    <div class="mt-3 flex gap-2">
+                        <button ${remaining===0?'disabled':''}
+                                onclick="selectActivity('${id}')"
+                                class="px-4 py-2 rounded-lg text-white ${remaining===0?'bg-gray-400 cursor-not-allowed':'bg-indigo-600 hover:bg-indigo-700'}">
+                            📝 ลงทะเบียน
+                        </button>
+
+                        <button onclick="exportRegistrations('${id}')"
+                                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                            📤 ส่งรายชื่อไป Google Sheets
+                        </button>
+
+                        <button onclick="removeActivity('${id}')"
+                                class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
+                            🗑️ ลบ
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function addActivity() {
+            const name = document.getElementById('actName').value.trim();
+            const capacity = parseInt(document.getElementById('actCapacity').value, 10);
+
+            if (!name || !capacity || capacity < 1) {
+                alert('กรุณากรอกชื่อกิจกรรมและจำนวนรับให้ถูกต้อง');
+                return;
+            }
+
+            const id = genActivityId();
+            activitiesData[id] = { id, name, capacity, createdAt: new Date().toISOString() };
+            registrationsData[id] = [];
+            saveToLocalStorage();
+
+            document.getElementById('actName').value = '';
+            document.getElementById('actCapacity').value = '';
+            loadActivitiesPage();
+            alert('✅ เพิ่มกิจกรรมเรียบร้อย');
+        }
+
+        function removeActivity(id) {
+            if (!confirm('ต้องการลบกิจกรรมนี้และข้อมูลการลงทะเบียนทั้งหมดหรือไม่?')) return;
+            delete activitiesData[id];
+            delete registrationsData[id];
+            saveToLocalStorage();
+            loadActivitiesPage();
+        }
+
+        function selectActivity(id) {
+            currentActivityId = id;
+            document.getElementById('regActTitle').textContent = activitiesData[id]?.name || '';
+            document.getElementById('registrationBox').classList.remove('hidden');
+            document.getElementById('regFullname').value = '';
+            document.getElementById('regStudentId').value = '';
+            document.getElementById('regYear').value = '';
+            document.getElementById('regDept').value = '';
+            document.getElementById('regPhoto').value = '';
+            document.getElementById('regGPS').textContent = 'ยังไม่ได้ดึงพิกัด';
+            delete document.getElementById('regGPS').dataset.gps;
+        }
+
+        function cancelRegistration() {
+            currentActivityId = null;
+            document.getElementById('registrationBox').classList.add('hidden');
+        }
+
+        function captureGPSForRegistration() {
+            const label = document.getElementById('regGPS');
+            label.textContent = 'กำลังดึงพิกัด...';
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude.toFixed(6);
+                        const lng = pos.coords.longitude.toFixed(6);
+                        label.textContent = `พิกัด: ${lat}, ${lng}`;
+                        label.dataset.gps = `${lat}, ${lng}`;
+                    },
+                    (err) => {
+                        label.textContent = 'ดึงพิกัดไม่สำเร็จ (ใช้ค่า demo: 17.4138, 104.7734)';
+                        label.dataset.gps = '17.413800, 104.773400';
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                label.textContent = 'เบราว์เซอร์ไม่รองรับ GPS (ใช้ค่า demo: 17.4138, 104.7734)';
+                label.dataset.gps = '17.413800, 104.773400';
+            }
+        }
+
+        function fileToDataURL(file) {
+            return new Promise((resolve) => {
+                if (!file) return resolve(null);
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveRegistration() {
+            if (!currentActivityId) {
+                alert('กรุณาเลือกกิจกรรมก่อน');
+                return;
+            }
+
+            const fullname  = document.getElementById('regFullname').value.trim();
+            const studentId = document.getElementById('regStudentId').value.trim();
+            const year      = document.getElementById('regYear').value;
+            const dept      = document.getElementById('regDept').value;
+            const gpsLabel  = document.getElementById('regGPS');
+            const gps       = gpsLabel.dataset.gps || null;
+            const photoFile = document.getElementById('regPhoto').files[0];
+            const photoDataUrl = await fileToDataURL(photoFile);
+
+            if (!fullname || !studentId || !year || !dept) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            // ตรวจจำนวนคงเหลือ
+            const regs = registrationsData[currentActivityId] || [];
+            const cap  = activitiesData[currentActivityId]?.capacity || 0;
+            if (regs.length >= cap) {
+                alert('กิจกรรมนี้เต็มแล้ว');
+                return;
+            }
+
+            const reg = {
+                fullname, studentId, year, dept,
+                gps: gps || 'ไม่มีข้อมูล',
+                photoDataUrl: photoDataUrl || null,
+                ts: new Date().toISOString()
+            };
+
+            registrationsData[currentActivityId].push(reg);
+            saveToLocalStorage();
+
+            alert('✅ บันทึกการลงทะเบียนเรียบร้อย');
+            cancelRegistration();
+            loadActivitiesPage();
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeData();
+            getLocation();
+            loadGoogleSheetsConfig();
+        });
+    </script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bc8193b4367993',t:'MTc1OTk5ODUyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
