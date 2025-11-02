@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MITCheck — เลือกบทบาทการใช้งาน</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light only">
+  <style>
+    :root{
+      --mit-purple:#6213a9; --mit-gold:#fac903; --ink:#0f172a; --muted:#64748b;
+    }
+    html,body{height:100%} body{font-family:'Sarabun',ui-sans-serif,system-ui; }
+    .card{background:rgba(255,255,255,.9); backdrop-filter: blur(10px)}
+    .btn{transition:transform .06s ease, box-shadow .2s ease}
+    .btn:active{transform:translateY(1px)}
+    .ring-focus:focus-visible{outline: none; box-shadow: 0 0 0 4px rgba(98,19,169,.25)}
+  </style>
+</head>
+<body class="min-h-full bg-gradient-to-br from-indigo-50 via-purple-50 to-amber-50">
+  <main class="max-w-xl mx-auto px-5 py-10 sm:py-16">
+    <!-- Logo/Title -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center gap-3">
+        <span class="text-4xl">🎓</span>
+        <h1 class="text-3xl sm:text-4xl font-bold" style="color:var(--mit-purple)">MITCheck</h1>
+      </div>
+      <p class="text-sm sm:text-base text-slate-600 mt-2">ระบบเช็คชื่อนักศึกษาด้วย GPS</p>
+      <p class="text-xs text-slate-500">มหาวิทยาลัยนครพนม — คณะวิทยาการจัดการและเทคโนโลยีสารสนเทศ</p>
+    </header>
+
+    <!-- Role Card -->
+    <section class="card rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">เลือกบทบาทการใช้งาน</h2>
+
+      <div class="grid gap-4">
+        <!-- Student -->
+        <a href="student.html"
+           class="btn ring-focus w-full rounded-xl px-5 py-4 flex items-center gap-4 border border-slate-200 bg-white hover:shadow-lg"
+           aria-label="เข้าสู่ระบบสำหรับนักศึกษา">
+          <div class="grid place-content-center w-12 h-12 rounded-full" style="background:var(--mit-purple); color:#fff">👩‍🎓</div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-slate-900">สำหรับนักศึกษา</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background: #f3e8ff; color: var(--mit-purple)">GPS Check-in</span>
+            </div>
+            <p class="text-sm text-slate-600 mt-1">เช็คชื่อ/เข้าร่วมกิจกรรม — ใช้งานบนมือถือ</p>
+          </div>
+        </a>
+
+        <!-- Admin/Staff -->
+        <a href="admin.html"
+           class="btn ring-focus w-full rounded-xl px-5 py-4 flex items-center gap-4 border border-slate-200 bg-white hover:shadow-lg"
+           aria-label="เข้าสู่ระบบสำหรับเจ้าหน้าที่">
+          <div class="grid place-content-center w-12 h-12 rounded-full" style="background:var(--mit-gold); color:#111827">🛠️</div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-slate-900">สำหรับเจ้าหน้าที่</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Dashboard</span>
+            </div>
+            <p class="text-sm text-slate-600 mt-1">จัดการกิจกรรม/นักศึกษา • รายงาน • ส่งออก Excel</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Tip -->
+      <div class="mt-5 text-xs text-slate-500">
+        * ระบบจะจดจำบทบาทที่เลือกไว้ในเครื่อง เพื่อพาเข้าสู่หน้าที่ใช้บ่อยในครั้งถัดไป
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-400 mt-8">
+      © <span id="y"></span> MITCheck • All rights reserved
+    </footer>
+  </main>
+
+  <script>
+    // (ทางเลือก) จำบทบาทที่เลือกไว้ และ auto-redirect ครั้งต่อไป
+    const KEY='mitcheck_role';
+    const y=document.getElementById('y'); y.textContent=new Date().getFullYear();
+
+    // ถ้าอยากให้จำบทบาทแล้วเด้งอัตโนมัติ เปิดคอมเมนต์บรรทัดด้านล่าง
+    // const remembered = localStorage.getItem(KEY);
+    // if(remembered==='student') location.href='student.html';
+    // if(remembered==='admin')   location.href='admin.html';
+
+    // ติด event เพื่อบันทึกบทบาทเมื่อคลิก
+    document.querySelectorAll('a[href$=".html"]').forEach(a=>{
+      a.addEventListener('click', e=>{
+        if(a.getAttribute('href').includes('student')) localStorage.setItem(KEY,'student');
+        if(a.getAttribute('href').includes('admin'))   localStorage.setItem(KEY,'admin');
+      });
+    });
+  </script>
+</body>
+</html>
