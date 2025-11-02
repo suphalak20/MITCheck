@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>MITCheck — Student</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--purple:#6213a9;--gold:#fac903}
+    *{box-sizing:border-box;font-family:'Sarabun',system-ui,Arial}
+    body{background:linear-gradient(180deg,#f5f7ff,#eef2ff)}
+    .shadow-soft{box-shadow:0 12px 28px rgba(0,0,0,.12)}
+    .status-present{background:#16a34a!important;color:#fff!important}
+    .status-absent{background:#dc2626!important;color:#fff!important}
+    .status-gps{background:#6d28d9!important;color:#fff!important}
+    .navbtn{border-radius:.75rem;padding:.5rem .9rem}
+    .navbtn.active{filter:brightness(.95);outline:2px solid #111827}
+  </style>
+</head>
+<body>
+  <div class="max-w-5xl mx-auto p-4 md:p-6">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-soft p-6 border-t-4" style="border-color:var(--purple)">
+      <div class="text-center">
+        <h1 class="text-3xl md:text-4xl font-bold" style="color:var(--purple)">🎓 MITCheck – Student</h1>
+        <p class="text-gray-700">ระบบเช็คชื่อนักศึกษาด้วย GPS (สำหรับนักศึกษา)</p>
+        <p class="text-sm text-gray-500">มหาวิทยาลัยนครพนม - คณะวิทยาการจัดการและเทคโนโลยีสารสนเทศ</p>
+      </div>
+      <div class="mt-4 flex flex-wrap justify-center gap-2">
+        <button class="navbtn bg-green-600 text-white" data-page="profile">👥 จัดการนักศึกษา</button>
+        <button class="navbtn" style="background:var(--purple);color:#fff" data-page="departments">🏫 เลือกสาขา</button>
+        <button class="navbtn bg-pink-600 text-white" data-page="activity">🎟️ กิจกรรม กยศ.</button>
+      </div>
+    </div>
+
+    <!-- GPS banner -->
+    <div id="gpsStatus" class="bg-yellow-100 border-l-4 border-yellow-500 p-3 mt-4 rounded hidden">
+      <span class="text-yellow-800">🌍 กำลังขอสิทธิ์เข้าถึงตำแหน่ง GPS...</span>
+    </div>
+
+    <!-- ============ PAGE: PROFILE ============ -->
+    <section id="page-profile" class="mt-6">
+      <div class="bg-white rounded-2xl shadow-soft p-6">
+        <h2 class="text-xl font-bold mb-4">👥 โปรไฟล์นักศึกษา</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input id="pf_name" class="border rounded-lg px-3 py-2" placeholder="ชื่อ-สกุล">
+          <input id="pf_sid"  class="border rounded-lg px-3 py-2" placeholder="รหัสนักศึกษา">
+          <select id="pf_dept" class="border rounded-lg px-3 py-2">
+            <option value="">เลือกสาขา</option>
+            <option value="accounting">บัญชี</option>
+            <option value="management">การจัดการ</option>
+            <option value="digital">นิเทศศาสตร์ดิจิทัล</option>
+            <option value="it">เทคโนโลยีสารสนเทศ</option>
+            <option value="sports">วิทยาศาสตร์การกีฬา</option>
+            <option value="marketing">นวัตกรรมการตลาด</option>
+          </select>
+          <select id="pf_year" class="border rounded-lg px-3 py-2">
+            <option value="">ชั้นปี</option>
+            <option value="1">ปี 1</option>
+            <option value="2">ปี 2</option>
+            <option value="3">ปี 3</option>
+            <option value="4">ปี 4</option>
+          </select>
+          <input id="pf_photo" type="file" accept="image/*" class="border rounded-lg px-3 py-2 md:col-span-2">
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button id="pf_save" class="px-6 py-2 rounded-lg text-white" style="background:var(--purple)">💾 บันทึกและส่งไปยัง Sheets</button>
+        </div>
+        <p id="pf_status" class="mt-3 text-sm text-gray-600"></p>
+      </div>
+    </section>
+
+    <!-- ============ PAGE: DEPARTMENTS ============ -->
+    <section id="page-departments" class="mt-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">📊 สาขาวิชาบัญชี</h3>
+          <label class="block text-sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('accounting',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">💼 สาขาวิชาการจัดการ</h3>
+          <label class="block text-sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('management',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">📱 นิเทศศาสตร์ดิจิทัล</h3>
+          <label class="block text-sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('digital',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">💻 เทคโนโลยีสารสนเทศ</h3>
+          <label class="block text_sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('it',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">⚽ วิทยาศาสตร์การกีฬา</h3>
+          <label class="block text-sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('sports',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-soft p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">🎯 นวัตกรรมการตลาด</h3>
+          <label class="block text-sm text-gray-600 mb-2">เลือกชั้นปี</label>
+          <select class="w-full border rounded-lg px-3 py-2" onchange="if(this.value){showCheckIn('marketing',this.value); this.value='';}">
+            <option value="">— เลือกชั้นปี —</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE: CHECK-IN ============ -->
+    <section id="page-checkin" class="mt-6 hidden">
+      <div class="bg-white rounded-2xl shadow-soft p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 id="ci_title" class="text-2xl font-bold text-gray-800">เช็คชื่อ</h2>
+            <p id="ci_sub" class="text-gray-600">เลือกสถานะของนักศึกษา</p>
+          </div>
+          <button class="px-4 py-2 rounded-lg bg-gray-600 text-white" onclick="showPage('departments')">← กลับ</button>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">เลือกวันที่:</label>
+          <input type="date" id="ci_date" class="border rounded-lg px-3 py-2">
+        </div>
+
+        <div id="ci_gpsinfo" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <span class="text-blue-800">📍 ตำแหน่งปัจจุบัน: <b id="ci_loc">กำลังโหลด…</b></span>
+        </div>
+
+        <div id="ci_list" class="space-y-3"></div>
+
+        <div class="text-center mt-6 space-y-2">
+          <button id="ci_save" class="px-8 py-3 rounded-lg bg-green-600 text-white text-lg font-semibold">💾 บันทึกและส่งไปยัง Sheets</button>
+        </div>
+
+        <div id="ci_status" class="mt-4 text-sm text-gray-600"></div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE: ACTIVITY (กยศ.) ============ -->
+    <section id="page-activity" class="mt-6 hidden">
+      <div class="bg-white rounded-2xl shadow-soft p-6">
+        <h2 class="text-xl font-bold mb-4">🎟️ ลงทะเบียนกิจกรรม กยศ.</h2>
+
+        <div id="activityList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+        <!-- manual/สำรอง -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input id="ac_title" class="border rounded-lg px-3 py-2" placeholder="ชื่อกิจกรรม (เช่น กยศ.จิตอาสา)">
+          <input id="ac_sid" class="border rounded-lg px-3 py-2" placeholder="รหัสนักศึกษา">
+          <input id="ac_name" class="border rounded-lg px-3 py-2" placeholder="ชื่อ-สกุล">
+          <select id="ac_year" class="border rounded-lg px-3 py-2">
+            <option value="">ชั้นปี</option><option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option><option value="4">ปี 4</option>
+          </select>
+          <select id="ac_dept" class="border rounded-lg px-3 py-2">
+            <option value="">เลือกสาขา</option>
+            <option value="accounting">บัญชี</option>
+            <option value="management">การจัดการ</option>
+            <option value="digital">นิเทศศาสตร์ดิจิทัล</option>
+            <option value="it">เทคโนโลยีสารสนเทศ</option>
+            <option value="sports">วิทยาศาสตร์การกีฬา</option>
+            <option value="marketing">นวัตกรรมการตลาด</option>
+          </select>
+          <input id="ac_photo" type="file" accept="image/*" class="border rounded-lg px-3 py-2 md:col-span-2">
+        </div>
+        <div class="mt-4 flex gap-3">
+          <button id="ac_gps" class="px-4 py-2 rounded-lg bg-indigo-600 text-white">📍 ดึง GPS</button>
+          <span id="ac_gps_label" class="self-center text-sm text-gray-700">ยังไม่ได้ดึงพิกัด</span>
+        </div>
+        <div class="mt-5">
+          <button id="ac_save_send" class="px-6 py-2 rounded-lg text-white" style="background:var(--purple)">💾 บันทึกและส่งไปยัง Sheets</button>
+        </div>
+        <p id="ac_status" class="mt-3 text-sm text-gray-600"></p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /* ==================== (A) CONFIG ==================== */
+    // ใช้ค่าเดียวกับฝั่ง admin ตามที่ให้มา
+    const DEFAULT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwSF0ndVoU5hJrRw4ea5xGcu6tlUifsn4nXtEoay-xpR3AmWRsfQRSOGa0Hp2pPpEZh/exec";
+    const DEFAULT_SHEETS_ID  = "1ST0Pe4mojfQiWQRR589BTXj0mWqfRorMAsJFKWs89Pc";
+    const LS_KEY_CFG = 'mitcheck_google_config';
+
+    let googleSheetsConfig = { webAppUrl: DEFAULT_WEBAPP_URL, sheetsId: DEFAULT_SHEETS_ID };
+    try {
+      const savedCfg = JSON.parse(localStorage.getItem(LS_KEY_CFG) || "{}");
+      if (savedCfg.webAppUrl) googleSheetsConfig.webAppUrl = savedCfg.webAppUrl;
+      if (savedCfg.sheetsId)  googleSheetsConfig.sheetsId  = savedCfg.sheetsId;
+    } catch {}
+
+    /* ==================== (B) helper: safePost ==================== */
+    async function safePost(url, payload = {}) {
+      const fd = new FormData();
+      fd.append('payload', JSON.stringify(payload));
+      const res  = await fetch(url, { method: 'POST', body: fd });
+      const text = await res.text();
+      try { return JSON.parse(text); }
+      catch { throw new Error(`HTTP ${res.status} ${res.statusText}: ${text?.slice(0,200)||'(empty)'}`); }
+    }
+    // ใช้ส่ง records แบบเดียวกับหน้าครู/admin
+    async function sendRecordsSafe(records) {
+      if (!googleSheetsConfig.webAppUrl) throw new Error('ยังไม่ได้ตั้งค่า Web App URL');
+      const res = await safePost(googleSheetsConfig.webAppUrl, { records });
+      if (!res.success) throw new Error(res.error || 'unknown');
+      return res;
+    }
+
+    /* ==================== STATE ==================== */
+    let currentDepartment = "", currentYear = "", currentLocation = null;
+    const LS_KEY_PROFILE = "mitcheck_student_profile";
+    function makeStudentListFromProfile() {
+      const p = JSON.parse(localStorage.getItem(LS_KEY_PROFILE) || "{}");
+      if (!p.sid || !p.name) return [];
+      return [{ id: p.sid, name: p.name, emoji: '👩‍🎓' }];
+    }
+
+    /* ==================== NAV ==================== */
+    const navButtons = document.querySelectorAll('.navbtn');
+    const pages = {
+      profile: document.getElementById('page-profile'),
+      departments: document.getElementById('page-departments'),
+      checkin: document.getElementById('page-checkin'),
+      activity: document.getElementById('page-activity'),
+    };
+    function showPage(key){
+      Object.keys(pages).forEach(k => pages[k].classList.toggle('hidden', k!==key));
+      navButtons.forEach(b => b.classList.toggle('active', b.dataset.page===key));
+      if (key==='departments') getLocation();
+    }
+    navButtons.forEach(b=> b.addEventListener('click', ()=> showPage(b.dataset.page)));
+    showPage('profile');
+
+    /* ==================== GPS ==================== */
+    function getLocation() {
+      const banner = document.getElementById('gpsStatus');
+      banner.classList.remove('hidden');
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos)=>{
+            currentLocation = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+            const ciLoc = document.getElementById('ci_loc');
+            if (ciLoc) ciLoc.textContent = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
+            banner.classList.add('hidden');
+          },
+          ()=>{
+            currentLocation = { latitude: 17.386701, longitude: 104.788787 }; // demo
+            const ciLoc = document.getElementById('ci_loc');
+            if (ciLoc) ciLoc.textContent = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)} (demo)`;
+            banner.classList.add('hidden');
+          }
+        );
+      } else {
+        currentLocation = { latitude: 17.386701, longitude: 104.788787 };
+        banner.classList.add('hidden');
+      }
+    }
+
+    /* ==================== UTIL ==================== */
+    function fileToDataURL(file){
+      return new Promise(resolve=>{
+        if(!file) return resolve(null);
+        const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.readAsDataURL(file);
+      });
+    }
+
+    /* ==================== PROFILE ==================== */
+    const pfName=document.getElementById('pf_name');
+    const pfSid =document.getElementById('pf_sid');
+    const pfDept=document.getElementById('pf_dept');
+    const pfYear=document.getElementById('pf_year');
+    const pfPhoto=document.getElementById('pf_photo');
+    const pfStatus=document.getElementById('pf_status');
+
+    (function loadProfile(){
+      try{
+        const p=JSON.parse(localStorage.getItem(LS_KEY_PROFILE)||'{}');
+        pfName.value=p.name||''; pfSid.value=p.sid||''; pfDept.value=p.dept||''; pfYear.value=p.year||''; 
+      }catch{}
+    })();
+
+    document.getElementById('pf_save').onclick = async ()=>{
+      const name=pfName.value.trim(), sid=pfSid.value.trim(), dept=pfDept.value, year=pfYear.value;
+      if(!name||!sid||!dept||!year){ pfStatus.textContent='❌ กรุณากรอกให้ครบ'; return; }
+      const photo=await fileToDataURL(pfPhoto.files?.[0]);
+      localStorage.setItem(LS_KEY_PROFILE, JSON.stringify({name,sid,dept,year,photoDataUrl:photo||null}));
+
+      const now=new Date();
+      const rec=[{
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('th-TH'),
+        studentId: sid,
+        studentName: name,
+        department: dept,
+        year,
+        status: 'อัปเดตโปรไฟล์',
+        gps: '-'
+      }];
+
+      pfStatus.textContent='⏳ กำลังบันทึก...';
+      try {
+        const d = await sendRecordsSafe(rec);
+        pfStatus.textContent = '✅ บันทึกและส่งสำเร็จ: ' + d.message;
+      } catch (err) {
+        pfStatus.textContent = '❌ ไม่สำเร็จ: ' + err.message;
+      }
+      setTimeout(()=>pfStatus.textContent='',4000);
+    };
+
+    /* ==================== CHECK-IN ==================== */
+    const ciListHolder = document.getElementById('ci_list');
+    const ciDateInput  = document.getElementById('ci_date');
+    document.getElementById('ci_date').value = new Date().toISOString().split('T')[0];
+
+    function showCheckIn(dept, year){
+      currentDepartment=dept; currentYear=year;
+      const nameMap={accounting:'บัญชี',management:'การจัดการ',digital:'นิเทศศาสตร์ดิจิทัล',it:'เทคโนโลยีสารสนเทศ',sports:'วิทยาศาสตร์การกีฬา',marketing:'นวัตกรรมการตลาด'};
+      document.getElementById('ci_title').textContent = `เช็คชื่อ ${nameMap[dept]||dept} ชั้นปีที่ ${year}`;
+      document.getElementById('ci_sub').textContent   = 'เลือกสถานะของนักศึกษา';
+      showPage('checkin');
+      getLocation();
+      renderStudentRows();
+    }
+
+    function renderStudentRows(){
+      ciListHolder.innerHTML='';
+      const students = makeStudentListFromProfile();
+      if(students.length===0){
+        ciListHolder.innerHTML = '<div class="text-gray-500">โปรดบันทึกโปรไฟล์ในเมนู "จัดการนักศึกษา" ก่อน</div>';
+        return;
+      }
+      students.forEach(s=>{
+        const row=document.createElement('div');
+        row.id=`st-${s.id}`;
+        row.className='bg-gray-50 rounded-lg p-4 border border-gray-200';
+        row.innerHTML=`
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">${s.emoji}</div>
+              <div>
+                <div class="font-semibold text-gray-800">${s.name}</div>
+                <div class="text-sm text-gray-600">${s.id}</div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-3 py-1 rounded text-sm bg-green-600 text-white" onclick="setStatus('${s.id}','present')">✅ เข้าร่วมกิจกรรม</button>
+              <button class="px-3 py-1 rounded text-sm bg-red-600 text-white"    onclick="setStatus('${s.id}','absent')">❌ ไม่เข้าร่วมกิจกรรม</button>
+              <button class="px-3 py-1 rounded text-sm bg-purple-600 text-white" onclick="setStatus('${s.id}','gps')">📍 ดึงพิกัด</button>
+            </div>
+          </div>`;
+        ciListHolder.appendChild(row);
+      });
+    }
+
+    const attendanceData = {};
+    function setStatus(studentId, status){
+      document.getElementById(`st-${studentId}`).classList.remove('status-present','status-absent','status-gps');
+      document.getElementById(`st-${studentId}`).classList.add(`status-${status}`);
+      const date=ciDateInput.value;
+      attendanceData[date]=attendanceData[date]||{};
+      attendanceData[date][studentId]={ status, timestamp:new Date().toLocaleString('th-TH'), location:currentLocation, department:currentDepartment, year:currentYear };
+    }
+
+    document.getElementById('ci_save').onclick = async ()=>{
+      const date=ciDateInput.value;
+      const day=attendanceData[date]||{};
+      const p = JSON.parse(localStorage.getItem(LS_KEY_PROFILE)||'{}');
+      const ciStatus=document.getElementById('ci_status');
+
+      if(!p.sid || !p.name){ ciStatus.textContent='❌ โปรดบันทึกโปรไฟล์ก่อน'; return; }
+      if(!day[p.sid]){ ciStatus.textContent='❌ โปรดกดสถานะก่อนบันทึก'; return; }
+
+      const st = day[p.sid];
+      const gpsText = st.location ? `${st.location.latitude.toFixed(6)}, ${st.location.longitude.toFixed(6)}` : 'ไม่มีข้อมูล';
+      const statusNames={present:'เข้าร่วมกิจกรรม',absent:'ไม่เข้าร่วมกิจกรรม',gps:'ดึงพิกัด'};
+      const rec=[{date, time:new Date().toLocaleTimeString('th-TH'), studentId:p.sid, studentName:p.name, department:st.department, year:st.year, status:statusNames[st.status]||st.status, gps:gpsText}];
+
+      ciStatus.textContent='⏳ กำลังส่ง...';
+      try{
+        const d = await sendRecordsSafe(rec);
+        ciStatus.textContent = '✅ บันทึกสำเร็จ: ' + d.message;
+      }catch(err){
+        ciStatus.textContent = '❌ ไม่สำเร็จ: ' + err.message;
+      }
+      setTimeout(()=>ciStatus.textContent='',4000);
+    };
+
+    /* ==================== ACTIVITY: Back-end binding ==================== */
+    async function fetchActivitiesForStudent() {
+      const listBox = document.getElementById('activityList');
+      if (!listBox) return;
+      listBox.innerHTML = '<div class="text-gray-500">กำลังโหลดกิจกรรม...</div>';
+
+      try {
+        const data = await safePost(googleSheetsConfig.webAppUrl, { type: 'listactivities' });
+        if (!data.success) throw new Error(data.error || 'load failed');
+
+        const items = data.data || [];
+        if (!items.length) {
+          listBox.innerHTML = '<div class="text-gray-500">ยังไม่มีกิจกรรมที่เปิดรับ</div>';
+          return;
+        }
+
+        listBox.innerHTML = '';
+        items.forEach(act => {
+          const remaining = Math.max(0, (Number(act.capacity)||0) - (Number(act.registered)||0));
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-lg border p-4 flex flex-col';
+          card.innerHTML = `
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-800">${act.name}</h4>
+              <p class="text-sm text-gray-600 mt-1">
+                รับ: ${act.capacity} คน • ลงทะเบียนแล้ว: ${act.registered||0}
+                • คงเหลือ: <span class="${remaining>0?'text-green-700':'text-red-700'} font-semibold">${remaining}</span>
+              </p>
+              <p class="text-xs text-gray-500 mt-1">สร้างเมื่อ: ${new Date(act.createdAt).toLocaleString('th-TH')}</p>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button ${remaining===0?'disabled':''}
+                onclick="selectActivity('${act.id}', '${(act.name||'').replace(/'/g, "\\'")}')"
+                class="px-4 py-2 rounded-lg text-white ${remaining===0?'bg-gray-400 cursor-not-allowed':'bg-indigo-600 hover:bg-indigo-700'}">
+                📝 ลงทะเบียน
+              </button>
+            </div>`;
+          listBox.appendChild(card);
+        });
+      } catch (err) {
+        listBox.innerHTML = `<div class="text-red-600">โหลดกิจกรรมไม่สำเร็จ: ${err.message}</div>`;
+      }
+    }
+
+    function selectActivity(actId, actName) {
+      const boxId = 'registrationBoxStudent';
+      let box = document.getElementById(boxId);
+      if (!box) {
+        const container = document.getElementById('page-activity');
+        const el = document.createElement('div');
+        el.id = boxId;
+        el.className = 'mt-6 bg-indigo-50 border border-indigo-200 rounded-lg p-6';
+        el.innerHTML = `
+          <h3 class="text-lg font-semibold mb-4">📝 ลงทะเบียนเข้าร่วมกิจกรรม: <span id="regActTitleStu" class="font-bold"></span></h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input id="regFullnameStu" type="text" placeholder="ชื่อ-สกุล" class="border border-gray-300 rounded-lg px-3 py-2">
+            <input id="regStudentIdStu" type="text" placeholder="รหัสนักศึกษา" class="border border-gray-300 rounded-lg px-3 py-2">
+            <select id="regYearStu" class="border border-gray-300 rounded-lg px-3 py-2">
+              <option value="">เลือกชั้นปี</option>
+              <option value="1">ปี 1</option>
+              <option value="2">ปี 2</option>
+              <option value="3">ปี 3</option>
+              <option value="4">ปี 4</option>
+            </select>
+            <select id="regDeptStu" class="border border-gray-300 rounded-lg px-3 py-2">
+              <option value="">เลือกสาขา</option>
+              <option value="accounting">บัญชี</option>
+              <option value="management">การจัดการ</option>
+              <option value="digital">นิเทศศาสตร์ดิจิทัล</option>
+              <option value="it">เทคโนโลยีสารสนเทศ</option>
+              <option value="sports">วิทยาศาสตร์การกีฬา</option>
+              <option value="marketing">นวัตกรรมการตลาด</option>
+            </select>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button onclick="captureGPSForRegistrationStu()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">📍 ดึง GPS</button>
+            <span id="regGPSStu" class="text-sm text-gray-700 self-center">ยังไม่ได้ดึงพิกัด</span>
+          </div>
+          <div class="mt-6">
+            <button id="btnSaveRegStu" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">💾 บันทึกและส่งไปยัง Sheets</button>
+            <button onclick="document.getElementById('${boxId}').remove()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 ml-2">ยกเลิก</button>
+          </div>`;
+        container.appendChild(el);
+        box = el;
+      }
+
+      const p = JSON.parse(localStorage.getItem('mitcheck_student_profile') || '{}');
+      document.getElementById('regActTitleStu').textContent = actName || '';
+      document.getElementById('regFullnameStu').value = p.name || '';
+      document.getElementById('regStudentIdStu').value = p.sid || '';
+      document.getElementById('regYearStu').value = p.year || '';
+      document.getElementById('regDeptStu').value = p.dept || '';
+
+      const btn = document.getElementById('btnSaveRegStu');
+      btn.onclick = () => saveRegistrationStu(actId);
+    }
+
+    function captureGPSForRegistrationStu() {
+      const label = document.getElementById('regGPSStu');
+      label.textContent = 'กำลังดึงพิกัด...';
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            label.textContent = `พิกัด: ${lat}, ${lng}`;
+            label.dataset.gps = `${lat}, ${lng}`;
+          },
+          () => {
+            label.textContent = 'ดึงพิกัดไม่สำเร็จ (ใช้ demo: 17.4138, 104.7734)';
+            label.dataset.gps = '17.413800, 104.773400';
+          },
+          { enableHighAccuracy:true, timeout:8000 }
+        );
+      } else {
+        label.textContent = 'เบราว์เซอร์ไม่รองรับ GPS (demo)';
+        label.dataset.gps = '17.413800, 104.773400';
+      }
+    }
+
+    async function saveRegistrationStu(actId) {
+      const fullname  = document.getElementById('regFullnameStu').value.trim();
+      const studentId = document.getElementById('regStudentIdStu').value.trim();
+      const year      = document.getElementById('regYearStu').value;
+      const dept      = document.getElementById('regDeptStu').value;
+      const gps       = (document.getElementById('regGPSStu').dataset.gps || '').trim();
+
+      if (!fullname || !studentId || !year || !dept) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      if (!googleSheetsConfig.webAppUrl) { alert('ยังไม่ได้ตั้งค่า Web App URL'); return; }
+
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      toast.textContent = '🔄 กำลังบันทึกการลงทะเบียน...';
+      document.body.appendChild(toast);
+
+      try {
+        const res = await safePost(googleSheetsConfig.webAppUrl, {
+          type: 'register', actId, studentId, fullname, year, dept, gps
+        });
+        toast.remove();
+        if (!res.success) throw new Error(res.error || 'register failed');
+
+        const ok = document.createElement('div');
+        ok.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        ok.innerHTML = `<div class="text-center"><div class="text-2xl mb-1">🎉</div><div class="font-bold">ลงทะเบียนสำเร็จ</div><div class="text-sm mt-1">${res.message||''}</div></div>`;
+        document.body.appendChild(ok);
+        setTimeout(()=>ok.remove(), 5000);
+
+        const box = document.getElementById('registrationBoxStudent'); if (box) box.remove();
+        fetchActivitiesForStudent();
+      } catch (err) {
+        toast.remove();
+        const bad = document.createElement('div');
+        bad.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        bad.innerHTML = `<div class="text-center"><div class="text-2xl mb-1">❌</div><div class="font-bold">ไม่สำเร็จ</div><div class="text-sm mt-1">${err.message}</div></div>`;
+        document.body.appendChild(bad);
+        setTimeout(()=>bad.remove(), 7000);
+      }
+    }
+
+    // เข้าเมนู "กิจกรรม" แล้วค่อยโหลด
+    const _origShowPage = showPage;
+    showPage = function(key) {
+      _origShowPage(key);
+      if (key === 'activity') fetchActivitiesForStudent();
+    };
+
+    /* ==================== ACTIVITY (manual/backup) ==================== */
+    const acTitle=document.getElementById('ac_title');
+    const acSid=document.getElementById('ac_sid');
+    const acName=document.getElementById('ac_name');
+    const acYear=document.getElementById('ac_year');
+    const acDept=document.getElementById('ac_dept');
+    const acPhoto=document.getElementById('ac_photo');
+    const acGpsBtn=document.getElementById('ac_gps');
+    const acGpsLabel=document.getElementById('ac_gps_label');
+    const acStatus=document.getElementById('ac_status');
+
+    (function(){
+      const p = JSON.parse(localStorage.getItem(LS_KEY_PROFILE)||'{}');
+      if(p.sid) acSid.value=p.sid;
+      if(p.name) acName.value=p.name;
+      if(p.dept) acDept.value=p.dept;
+      if(p.year) acYear.value=p.year;
+    })();
+
+    acGpsBtn.onclick = ()=>{
+      acGpsLabel.textContent='กำลังดึงพิกัด...';
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          pos=>{ const lat=pos.coords.latitude.toFixed(6), lng=pos.coords.longitude.toFixed(6); acGpsLabel.textContent=`พิกัด: ${lat}, ${lng}`; acGpsLabel.dataset.gps=`${lat}, ${lng}`; },
+          ()=>{ acGpsLabel.textContent='ดึงพิกัดไม่สำเร็จ (ใช้ demo: 17.4138, 104.7734)'; acGpsLabel.dataset.gps='17.413800, 104.773400'; },
+          {enableHighAccuracy:true, timeout:8000}
+        );
+      }else{
+        acGpsLabel.textContent='เบราว์เซอร์ไม่รองรับ GPS (demo)'; acGpsLabel.dataset.gps='17.413800, 104.773400';
+      }
+    };
+
+    document.getElementById('ac_save_send').onclick = async ()=>{
+      const title=acTitle.value.trim(), sid=acSid.value.trim(), name=acName.value.trim(), year=acYear.value, dept=acDept.value;
+      if(!title||!sid||!name||!year||!dept){ acStatus.textContent='❌ กรุณากรอกให้ครบ'; return; }
+      const gps = acGpsLabel.dataset.gps || 'ไม่มีข้อมูล';
+      const photoDataUrl = await fileToDataURL(acPhoto.files?.[0]); // เก็บ local เท่านั้นในตัวอย่าง
+
+      const cache = JSON.parse(localStorage.getItem('mitcheck_activity_regs')||'[]');
+      cache.push({title,sid,name,dept,year,gps,photoDataUrl,ts:Date.now()});
+      localStorage.setItem('mitcheck_activity_regs', JSON.stringify(cache));
+
+      const now=new Date();
+      const records=[{
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('th-TH'),
+        studentId: sid,
+        studentName: name,
+        department: dept,
+        year,
+        status: `กิจกรรม: ${title}`,
+        gps
+      }];
+
+      acStatus.textContent='⏳ กำลังส่ง...';
+      try{
+        const d = await sendRecordsSafe(records);
+        acStatus.textContent = '✅ ลงทะเบียนสำเร็จ: ' + d.message;
+        acTitle.value=''; acPhoto.value=''; acGpsLabel.textContent='ยังไม่ได้ดึงพิกัด'; delete acGpsLabel.dataset.gps;
+      }catch(err){
+        acStatus.textContent = '❌ ไม่สำเร็จ: ' + err.message;
+      }
+      setTimeout(()=>acStatus.textContent='',4000);
+    };
+  </script>
+</body>
+</html>
